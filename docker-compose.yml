@@ -1,0 +1,54 @@
+services:
+  mongodb:
+    image: mongo:6-jammy
+    container_name: mongo_mongo
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - '$DB_PORT:$DB_PORT'
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh mongodb://${DB_USER}:${DB_PASSWORD}@localhost:${DB_PORT}/?authSource=${DB_NAME} --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - ./etc/db-entrypoint.sh:/docker-entrypoint-initdb.d/db-entrypoint.sh
+      - mongo-data:/data/db
+
+  builder:
+    image: gradle:8.11.1-jdk17-jammy
+    container_name: mongo_builder
+    working_dir: /app
+    volumes:
+      - .:/app   # Mount the current directory to `/app` in the container
+      - gradle-cache:/root/.gradle # Reuse Gradle cache for faster builds
+    command: gradle bootJar
+
+  app:
+    image: openjdk:17-jdk-slim # Use a lightweight OpenJDK image for running the app
+    container_name: mongo_app
+    depends_on:
+      builder:
+        condition: service_completed_successfully
+      mongodb:
+        condition: service_healthy
+    working_dir: /app
+    volumes:
+      - .:/app   # Mount the current directory to `/app` in the container
+    env_file:
+      - .env
+    environment:
+      - SPRING_DATA_MONGODB_HOST=mongodb
+      - SPRING_DATA_MONGODB_PORT=$DB_PORT
+      - SPRING_DATA_MONGODB_DATABASE=$DB_NAME
+      - SPRING_DATA_MONGODB_USERNAME=$DB_USER
+      - SPRING_DATA_MONGODB_PASSWORD=$DB_PASSWORD
+    ports:
+      - '8080:8080'
+    command: java -jar build/libs/hello-mongo-0.0.1.jar
+    restart: always
+
+volumes:
+  gradle-cache:
+  mongo-data:
