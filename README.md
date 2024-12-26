@@ -3,10 +3,13 @@ simple spring-boot example app with mongo db
 
 # .env 
 ```dotenv
-DB_PORT=
-DB_NAME=
-DB_USER=
-DB_PASSWORD=
 MONGO_INITDB_ROOT_USERNAME=
 MONGO_INITDB_ROOT_PASSWORD=
+SPRING_DATA_MONGODB_HOST=
+SPRING_DATA_MONGODB_PORT=
+SPRING_DATA_MONGODB_DATABASE=
+SPRING_DATA_MONGODB_AUTHENTICATIONDATABASE=
 ```
+
+# links
+- [spring-data-mongodb](https://spring.io/projects/spring-data-mongodb)
